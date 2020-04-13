@@ -41,9 +41,8 @@ def download_photo_if_absent(form, registration, photos):
     bucket = client.get_bucket(config.GOOGLE_STORAGE_BUCKET)
     for photo in photos:
         photo_name = f"{config.PHOTO_PATH}/{form}/{registration}/{photo}"
-        blob = storage.Blob(bucket=bucket, name=photo_name)
-        status = blob.exists(client)
-        if status:
+        blob = bucket.blob(photo_name)
+        if blob.exists():
             logging.info(f"photo {photo_name} already downloaded, skip")
         else:
             store_photo(blob, photo)
