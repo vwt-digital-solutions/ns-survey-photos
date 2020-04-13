@@ -8,6 +8,8 @@ import config
 from google.cloud import storage, kms_v1
 from requests_oauthlib import OAuth1
 
+client = storage.Client()
+
 
 def get_authentication_secret():
     authentication_secret_encrypted = base64.b64decode(os.environ['AUTHENTICATION_SECRET_ENCRYPTED'])
@@ -19,7 +21,6 @@ def get_authentication_secret():
 
 
 def get_data_from_store(bucket_name, source):
-    client = storage.Client()
     bucket = client.get_bucket(bucket_name)
     blob = bucket.get_blob(source)
     content = blob.download_as_string().decode("utf-8")
@@ -37,7 +38,6 @@ def get_data_from_store(bucket_name, source):
 
 
 def download_photo_if_absent(form, registration, photos):
-    client = storage.Client()
     bucket = client.get_bucket(config.GOOGLE_STORAGE_BUCKET)
     for photo in photos:
         photo_name = f"{config.PHOTO_PATH}/{form}/{registration}/{photo}"
