@@ -3,10 +3,12 @@ import logging
 import json
 import base64
 import requests
-import datetime
 import config
+
 from google.cloud import storage, kms_v1
+from google.api_core.exceptions import ServiceUnavailable
 from requests_oauthlib import OAuth1
+from retry import retry
 
 client = storage.Client()
 
@@ -37,6 +39,7 @@ def get_data_from_store(bucket_name, source):
         logging.error(f"Failure processing survey, skip. Reason {e}")
 
 
+@retry(ServiceUnavailable, tries=3, delay=2)
 def download_photo_if_absent(form, registration, photos):
     bucket = client.get_bucket(config.GOOGLE_STORAGE_BUCKET)
     for photo in photos:
@@ -66,7 +69,6 @@ def store_photo(blob, photo):
     )
 
     b64_data = base64.b64encode(data_response.content)
-    # logging.info(f"downloaded photo {b64_data}")
     blob.upload_from_string(data=b64_data, content_type="text/plain")
 
 
