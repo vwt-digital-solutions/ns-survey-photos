@@ -117,10 +117,28 @@ def process_survey_attachments(data, context):
     source = data['name']
     logging.info(f'New Blob: {source}')
 
-    if source.startswith('source'):
-        refs = get_data_from_store(bucket, source)
-        if refs:
-            for ref in refs['registrations']:
+    if not source.startswith('source'):
+        logging.info(f'Skipping {source}, already processed')
+        return
+
+    prefix = "/".join(source.split("/")[:3])
+    previous_source = list(client.list_blobs(bucket, prefix=prefix))[-2]
+    previous_refs = get_data_from_store(bucket, previous_source)
+
+    already_downloaded_attachments = {}
+
+    logging.info(f"source {previous_source}, refs: {len(previous_refs)}")
+
+    for ref in previous_refs['registrations']:
+        already_downloaded_attachments[(previous_refs['survey'], ref['registration'])] = ref['attachments']
+
+    refs = get_data_from_store(bucket, source)
+    if refs:
+        for ref in refs['registrations']:
+            if already_downloaded_attachments.get((refs['survey'], ref['registration']), False) == ref['attachments']:
+                logging.info(
+                    f"survey {refs['survey']} registration id: {ref['registration']} already processed")
+            else:
                 download_photo_if_absent(refs['survey'], ref['registration'], ref['attachments'])
                 logging.info(
                     f"survey {refs['survey']} registration id: {ref['registration']}, attachments {ref['attachments']}")
