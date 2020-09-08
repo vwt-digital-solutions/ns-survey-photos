@@ -52,6 +52,8 @@ def get_data_from_store(bucket_name, source):
                     'attachments': parse_survey(single['data'], [])
                 } for single in data['elements']]
             }
+        else:
+            return {}
     except Exception:
         logging.exception(f"Failure processing survey {source}, skipped.")
 
@@ -129,7 +131,7 @@ def process_survey_attachments(data, context):
 
     logging.info(f"source {previous_source}, refs: {len(previous_refs)}")
 
-    for ref in previous_refs['registrations']:
+    for ref in previous_refs.get('registrations', []):
         already_downloaded_attachments[(previous_refs['survey'], ref['registration'])] = ref['attachments']
 
     refs = get_data_from_store(bucket, source)
