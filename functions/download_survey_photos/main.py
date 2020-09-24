@@ -124,8 +124,13 @@ def process_survey_attachments(data, context):
         return
 
     prefix = "/".join(source.split("/")[:3])
-    previous_source = list(client.list_blobs(bucket, prefix=prefix))[-2].name
-    previous_refs = get_data_from_store(bucket, previous_source)
+
+    try:
+        previous_source = list(client.list_blobs(bucket, prefix=prefix))[-2].name
+        previous_refs = get_data_from_store(bucket, previous_source)
+    except IndexError:
+        previous_source = None
+        previous_refs = []
 
     already_downloaded_attachments = {}
 
