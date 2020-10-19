@@ -58,7 +58,7 @@ def get_data_from_store(bucket_name, source):
         logging.exception(f"Failure processing survey {source}, skipped.")
 
 
-@retry(ServiceUnavailable, tries=3, delay=2)
+@retry(ServiceUnavailable, tries=3, delay=2, logger=None)
 def download_photo_if_absent(form, registration, images):
     bucket = client.get_bucket(config.GOOGLE_STORAGE_BUCKET)
     for image in images:
