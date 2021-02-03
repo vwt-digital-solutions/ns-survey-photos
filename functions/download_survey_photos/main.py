@@ -123,23 +123,30 @@ def process_survey_attachments(data, context):
         logging.info(f'Skipping {source}, already processed')
         return
 
+    # Converts a source 'registrations/id/<year>/<month>/<day>/filename.json'
+    # To a path: registrations/id'
     prefix = "/".join(source.split("/")[:3])
 
+    # Try to find an older file for this specific registration.
+    # If an older blob exists, we can skip already downloaded attachments.
     try:
         previous_source = list(client.list_blobs(bucket, prefix=prefix))[-2].name
         previous_refs = get_data_from_store(bucket, previous_source)
     except IndexError:
         previous_source = None
-        previous_refs = []
+        previous_refs = {}
 
     already_downloaded_attachments = {}
 
     logging.info(f"source {previous_source}, refs: {len(previous_refs)}")
 
+    # Look for already processed attachments.
     for ref in previous_refs.get('registrations', []):
         already_downloaded_attachments[(previous_refs['survey'], ref['registration'])] = ref['attachments']
 
     refs = get_data_from_store(bucket, source)
+
+    # For every new attachment, download and save to the storage bucket.
     if refs:
         for ref in refs['registrations']:
             if already_downloaded_attachments.get((refs['survey'], ref['registration']), False) == ref['attachments']:
