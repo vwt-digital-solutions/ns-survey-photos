@@ -9,6 +9,7 @@ import config
 
 from google.cloud import storage, kms_v1, secretmanager_v1
 from google.api_core.exceptions import ServiceUnavailable
+from google.api_core import retry as gcp_retry
 
 from requests_oauthlib import OAuth1
 from retry import retry
@@ -114,11 +115,6 @@ def parse_survey(content, images):
     return images
 
 
-@retry(tries=5, delay=60, logger=None)
-def get_previous_blob(bucket, prefix):
-    return list(client.list_blobs(bucket, prefix=prefix))[-2].name
-
-
 def process_survey_attachments(data, context):
     bucket = data['bucket']
     source = data['name']
@@ -135,7 +131,8 @@ def process_survey_attachments(data, context):
     # Try to find an older file for this specific registration.
     # If an older blob exists, we can skip already downloaded attachments.
     try:
-        previous_source = get_previous_blob(bucket, prefix)
+        retry_policy = gcp_retry.Retry()
+        previous_source = list(client.list_blobs(bucket, prefix=prefix, retry=retry_policy))[-2].name
         previous_refs = get_data_from_store(bucket, previous_source)
     except IndexError:
         previous_source = None
